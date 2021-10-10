@@ -19,10 +19,10 @@ namespace ClientApp
             socket.Connect(IPAddress.Parse("127.0.0.1"), 1234);
 
             const int bytesize = 1024 * 1024;
-            byte[] buffer = new byte[bytesize];
 
             while (true)
             {
+                byte[] buffer = new byte[bytesize];
                 int bytesReceived = socket.Receive(buffer);
                 var response = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesReceived);
                 Console.WriteLine(response);

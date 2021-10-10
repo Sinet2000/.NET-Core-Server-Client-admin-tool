@@ -30,6 +30,8 @@ namespace ServerSide
 
             var connectedSocket = listeningSocket.Accept();
             listeningSocket.Close();
+            listeningSocket.Dispose();
+
             Console.WriteLine("\nClient: " + connectedSocket.RemoteEndPoint.ToString());
             connectedSocket.Send(System.Text.Encoding.UTF8.GetBytes(ServerCommandsHelper.getInitialMessage()));
 
@@ -45,6 +47,7 @@ namespace ServerSide
 
             while (true)
             {
+                buffer = new byte[bytesize];
                 int bytesReceived = connectedSocket.Receive(buffer);
                 var commands = getClientTypedCommands(buffer, bytesReceived);
 
@@ -139,7 +142,14 @@ namespace ServerSide
                 filesInfo.Add($"{folder.Split(filesPath).Last()}\t\t[Folder]");
             }
 
-            connectedSocket.Send(System.Text.Encoding.UTF8.GetBytes(string.Join('\n', filesInfo)));
+            var response = string.Empty;
+
+            if (filesInfo.Count == 0)
+                response = "Folder is empty!";
+            else
+                response = string.Join('\n', filesInfo);
+
+            connectedSocket.Send(System.Text.Encoding.UTF8.GetBytes(response));
         }
 
         private static void createFile(Socket connectedSocket, string fileName, string filesPath)
@@ -151,7 +161,6 @@ namespace ServerSide
             {
                 File.CreateText(filePath).Dispose();
                 response = System.Text.Encoding.UTF8.GetBytes($"\n\t File with name {fileName} is created!");
-                connectedSocket.Send(response);
             }
             else
                 response = System.Text.Encoding.UTF8.GetBytes($"\n\t File with name {fileName} already exists");
@@ -168,7 +177,6 @@ namespace ServerSide
             {
                 Directory.CreateDirectory(newFolderPath);
                 response = System.Text.Encoding.UTF8.GetBytes($"\n\t Folder with name {folderName} is created!");
-                connectedSocket.Send(response);
             }
             else
                 response = System.Text.Encoding.UTF8.GetBytes($"\n\t Directory with name {folderName} already exists");
@@ -188,7 +196,6 @@ namespace ServerSide
                     content = "File is empty!";
 
                 response = System.Text.Encoding.UTF8.GetBytes($"\t{content}");
-                connectedSocket.Send(response);
             }
             else
                 response = System.Text.Encoding.UTF8.GetBytes($"\n\t File with name {fileName} doesn't exists");
@@ -209,7 +216,6 @@ namespace ServerSide
                 }
 
                 response = System.Text.Encoding.UTF8.GetBytes($"\tContent is appended to the file {fileName}");
-                connectedSocket.Send(response);
             }
             else
                 response = System.Text.Encoding.UTF8.GetBytes($"\n\t File with name {fileName} doesn't exists");
@@ -227,7 +233,6 @@ namespace ServerSide
                 Directory.Delete(folderPath, true);
 
                 response = System.Text.Encoding.UTF8.GetBytes($"\tDirectory {folderPath} is deleted!");
-                connectedSocket.Send(response);
             }
             else
                 response = System.Text.Encoding.UTF8.GetBytes($"\n\t Directory with name {folderName} doesn't exists");
@@ -263,17 +268,17 @@ namespace ServerSide
                 else
                 {
                     currentFolderPath = Path.GetDirectoryName(currentFolderPath);
-                    response = System.Text.Encoding.UTF8.GetBytes($"\n{currentFolderPath}");
+                    response = System.Text.Encoding.UTF8.GetBytes($"\n{Constants.RootFolder + currentFolderPath.Split(rootFolderPath).Last()}");
                 }
             } 
             else
             {
-                var newCurrentFolderPath = Path.Combine(currentFolderPath, navigateToFolderName);
+                var folderToNavigatePath= Path.Combine(currentFolderPath, navigateToFolderName);
 
-                if (Directory.Exists(newCurrentFolderPath))
+                if (Directory.Exists(folderToNavigatePath))
                 {
-                    currentFolderPath = newCurrentFolderPath;
-                    response = System.Text.Encoding.UTF8.GetBytes($"\n{currentFolderPath}");
+                    currentFolderPath = folderToNavigatePath;
+                    response = System.Text.Encoding.UTF8.GetBytes($"\n{Constants.RootFolder + folderToNavigatePath.Split(rootFolderPath).Last()}");
                 }
                 else
                     response = System.Text.Encoding.UTF8.GetBytes($"\nThe folder {navigateToFolderName} doesn't exist!");

@@ -13,5 +13,6 @@ namespace ServerSide
         public const int RemoveFileCommandPartsCount = 2;
         public const string RootFolderName = "Files";
         public const string NavigateBack = "..";
+        public const string RootFolder = "root";
     }
 }
